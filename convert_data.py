@@ -94,7 +94,7 @@ def start(args: argparse.Namespace):
 if __name__=="__main__":
   argParser = argparse.ArgumentParser()
   argParser.add_argument("-dp", "--data_path", type=Path, default="./dataset/Keystrokes/files", help="dataset path")
-  argParser.add_argument("-sp", "--save_path", type=Path, default="./full_data.csv", help="dataset path")
+  argParser.add_argument("-sp", "--save_path", type=Path, default="./dataset/full_data.csv", help="dataset path")
   argParser.add_argument("-ns", "--num_of_strokes", type=int, default=200, help="num of strokes to use in split")
   argParser.add_argument("-nu", "--num_of_users", type=int, default=169000, help="num of strokes to use in split")
   args = argParser.parse_args()

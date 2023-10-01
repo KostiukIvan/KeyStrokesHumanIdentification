@@ -6,3 +6,9 @@ scikit-learn
 torch             
 pydantic
 pytest
+ipykernel
+tqdm
+pynput
+matplotlib
+seaborn
+scipy

@@ -7,7 +7,7 @@ def get_press_release_data():
     def on_press(key):
         if type(key) is keyboard.KeyCode:
           value = ord(key.char)   
-          press_events.append((value, time.time()))
+          press_events.append((value, time.time() * 1000))
         else:
            pass
            # TODO: all non-alphanumeric keyboard key are skipped. Temporary
@@ -16,7 +16,7 @@ def get_press_release_data():
     def on_release(key):
         if type(key) is keyboard.KeyCode:
           value = ord(key.char)   
-          release_events.append((value, time.time()))
+          release_events.append((value, time.time() * 1000))
         else:
            pass
            # TODO: all non-alphanumeric keyboard key are skipped. Temporary

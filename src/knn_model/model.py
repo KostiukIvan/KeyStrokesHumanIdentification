@@ -7,28 +7,21 @@ from os import walk
 import argparse
 from src.knn_model.utils import get_press_release_data
 import math
+import src.knn_model.loss_functions as loss_func
 
-def _get_mean_values_of_matrix(matrix):
-    for user_id in range(len(matrix)):
-       for key_id in range(len(matrix[user_id])):
-          matrix[user_id][key_id] = np.mean(matrix[user_id][key_id])
-    return matrix
-
-def get_matrix(df: pd.DataFrame):
-    matrix = [[[]  for _ in range(255)] for _ in range(len(np.unique(df["user"])))]
-    for user_id, key_code, rt, pt  in zip(df["user"], df["KEYCODE"], df["RELEASE_TIME"], df["PRESS_TIME"]):
-        if not math.isnan(key_code):
-            key_code = int(key_code)
-            matrix[user_id][key_code].append(rt - pt)
-
-    return matrix
 
 def add_new_empty_user(matrix): 
     print(f"Your user id will be {len(matrix)}")
     matrix.append([[]  for _ in range(255)])
-    return matrix
+    return matrix, len(matrix) - 1 
 
-def add_data_to_user(matrix, user_id):    
+def add_train_data_to_user_from_stream(matrix, user_id): 
+    print("********************************************************************************")
+    print("********************************************************************************")
+    print("***** Now you are asked to type some text (without pressing enter) just text. **")
+    print("*****               When you finish please press: *** Esc ***                 **")
+    print("********************************************************************************")
+    print("********************************************************************************")   
     assert 0 <= user_id < len(matrix)
 
     press_events, release_events = get_press_release_data()
@@ -48,19 +41,23 @@ def add_data_to_user(matrix, user_id):
     return matrix
 
 
-def predict_real_user_id(matrix):
+def read_test_text_and_print_similarity_prob(matrix, user_id):
+    print("********************************************************************************")
+    print("********************************************************************************")
+    print("***** Now type different text. We will use this as a sample to find your USER_ID")
+    print("*****               When you finish please press: *** Esc ***                 **")
+    print("********************************************************************************")
+    print("********************************************************************************")
+
     press_events, release_events = get_press_release_data()
     sample = build_sample_vector_based_on_press_release_data(press_events, release_events)
-    transf_matrix = _get_mean_values_of_matrix(matrix)
-    transf_sample = _get_mean_values_of_matrix([sample])
-    min_id, min_loss = get_id_of_user_based_on_sample(transf_matrix, transf_sample)
-    print("====" * 10)
-    print("====" * 10)
-    print("====" * 10)
-    print(f"Most probably you are the user id={min_id}, loss={min_loss}")
-    print("====" * 10)
-    print("====" * 10)
-    print("====" * 10)
+    probability = interference(matrix[user_id], sample, loss_func.kolomogorow_smirnow)
+
+    print("********************************************************************************")
+    print("********************************************************************************")
+    print(f"Probability that these are the same people = {probability}")
+    print("********************************************************************************")
+    print("********************************************************************************")
 
 
 def build_sample_vector_based_on_press_release_data(press_events, release_events):
@@ -79,18 +76,12 @@ def build_sample_vector_based_on_press_release_data(press_events, release_events
             print(f"ERROR while computing HD")
     return sample
 
-def get_id_of_user_based_on_sample(matrix, sample):
+
+def get_id_of_the_most_probable_user(matrix, sample, loss_function = loss_func.t_test):
     losses = [10000] * len(matrix)
     for user_id, row in enumerate(matrix):
-        loss = 0.
-        n = 0
-        for x, y in zip(sample[0], row):
-          if x > 0 and y > 0:
-             loss += (x - y) ** 2
-             n += 1
-        if loss > 0:
-          loss /= n
-          losses[user_id] = loss
+        losses[user_id] = interference(sample[0], row, loss_function)
+
     # min loss
     min_id = 0
     min_loss = losses[0]
@@ -100,3 +91,16 @@ def get_id_of_user_based_on_sample(matrix, sample):
           min_id = user_id
     return min_id, min_loss
 
+def interference(x_sample, y_sample, loss_function = loss_func.kolomogorow_smirnow):
+    loss = 0.
+    n = 0
+    for x_dist, y_dist in zip(x_sample, y_sample):
+        if len(x_dist) > 0  and len(y_dist) > 0:
+            l, _= loss_function(x_dist, y_dist)
+            loss += l
+            n += 1
+    if loss > 0:
+        loss /= n
+        return loss
+    else:
+        return 100000
